@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -26,9 +28,13 @@ public class LotteryCrawlerStartupRunner implements ApplicationRunner {
     
     private final NumberGuessService numberGuessService;
     private final EmailService emailService;
+    private final ApplicationContext applicationContext;
 
     @Value("${lottery.crawler.enabled:true}")
     private boolean crawlerEnabled;
+    
+    @Value("${lottery.auto.shutdown:true}")
+    private boolean autoShutdown;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -98,6 +104,14 @@ public class LotteryCrawlerStartupRunner implements ApplicationRunner {
         } catch (Exception e) {
             log.error("번호 예측 분석 실패: {}", e.getMessage(), e);
             // 번호 예측 실패는 애플리케이션 시작을 막지 않음
+        }
+        
+        // 모든 작업 완료 후 자동 종료
+        if (autoShutdown) {
+            log.info("모든 작업이 완료되었습니다. 애플리케이션을 종료합니다.");
+            SpringApplication.exit(applicationContext, () -> 0);
+        } else {
+            log.info("모든 작업이 완료되었습니다. 서버는 계속 실행됩니다.");
         }
     }
 }

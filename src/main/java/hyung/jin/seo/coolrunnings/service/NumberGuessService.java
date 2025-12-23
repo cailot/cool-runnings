@@ -30,12 +30,14 @@ public class NumberGuessService {
     private static final int RECENT_DRAWS_COUNT = 50;
     // 전체 분석에 사용할 최소 회차 수
     private static final int MIN_DRAWS_FOR_ANALYSIS = 10;
+    // 검증에 사용할 회차 수
+    private static final int VALIDATION_DRAWS_COUNT = 1500;
     // 번호 범위 (Set for Life는 1-44)
     private static final int MAX_NUMBER = 44;
     // 당첨 번호 7개 + 보너스 번호 2개 = 총 9개
     private static final int TOTAL_DRAWN_NUMBERS = 9;
     // 반복 예측 분석 횟수
-    private static final int MULTIPLE_RUNS_COUNT = 1000;
+    private static final int MULTIPLE_RUNS_COUNT = 1500;
     
     // 학습된 가중치 (과거 성공 패턴 기반)
     private volatile LearnedWeights learnedWeights = null;
@@ -1648,11 +1650,10 @@ public class NumberGuessService {
                         LearnedWeights originalWeights = learnedWeights;
                         learnedWeights = variedWeights;
                         
-                        // 상위 9개 번호 추출 (100% 제외)
+                        // 상위 9개 번호 추출
                         List<NumberProbability> allProbabilities = calculateAllProbabilities();
                         allProbabilities.sort((a, b) -> Double.compare(b.getProbability(), a.getProbability()));
                         List<Integer> top9 = allProbabilities.stream()
-                            .filter(np -> np.getProbability() < 0.9999)
                             .limit(9)
                             .map(NumberProbability::getNumber)
                             .collect(Collectors.toList());
@@ -1677,11 +1678,10 @@ public class NumberGuessService {
                     }
                 } else {
                     // 첫 번째 실행은 기본 가중치 사용
-                    // 상위 9개 번호 추출 (100% 제외)
+                    // 상위 9개 번호 추출
                     List<NumberProbability> allProbabilities = calculateAllProbabilities();
                     allProbabilities.sort((a, b) -> Double.compare(b.getProbability(), a.getProbability()));
                     List<Integer> top9 = allProbabilities.stream()
-                        .filter(np -> np.getProbability() < 0.9999)
                         .limit(9)
                         .map(NumberProbability::getNumber)
                         .collect(Collectors.toList());
@@ -1712,17 +1712,13 @@ public class NumberGuessService {
         
         log.info("\n=== 빈도 분석 결과 ===");
         
-        // 확률 맵을 먼저 계산 (100% 확률 필터링을 위해)
+        // 확률 맵을 먼저 계산
         List<NumberProbability> allProbabilitiesForFilter = calculateAllProbabilities();
         Map<Integer, Double> probMapForFilter = allProbabilitiesForFilter.stream()
             .collect(Collectors.toMap(NumberProbability::getNumber, NumberProbability::getProbability));
         
-        // 상위 9개: 등장횟수 많은 순으로 정렬하고 100% 확률 제외하여 정확히 7개 선택
+        // 상위 9개: 등장횟수 많은 순으로 정렬하여 정확히 7개 선택
         List<Map.Entry<Integer, Integer>> top9Sorted = top9Frequency.entrySet().stream()
-            .filter(entry -> {
-                double prob = probMapForFilter.getOrDefault(entry.getKey(), 0.0);
-                return prob < 0.9999; // 100% 확률 제외
-            })
             .sorted((a, b) -> {
                 int freqCompare = Integer.compare(b.getValue(), a.getValue()); // 빈도 높은 순
                 if (freqCompare != 0) return freqCompare;
@@ -1777,19 +1773,18 @@ public class NumberGuessService {
         
         log.info("\n=== 최종 예측 결과 요약 (등장횟수 순) ===");
         
-        // 최종 상위 7개 번호를 등장횟수 순으로 표시 (100% 확률 제외)
+        // 최종 상위 7개 번호를 등장횟수 순으로 표시
         List<NumberProbability> allProbabilities = calculateAllProbabilities();
         Map<Integer, Double> probMap = allProbabilities.stream()
             .collect(Collectors.toMap(NumberProbability::getNumber, NumberProbability::getProbability));
         
-        // 등장횟수 순으로 정렬하고 100% 확률 제외하여 정확히 7개 선택
+        // 등장횟수 순으로 정렬하여 정확히 7개 선택
         List<NumberProbability> finalTop9WithProb = top9Sorted.stream()
             .map(entry -> {
                 int num = entry.getKey();
                 double prob = probMap.getOrDefault(num, 0.0);
                 return new NumberProbability(num, prob);
             })
-            .filter(np -> np.getProbability() < 0.9999) // 100% 확률 제외
             .limit(7) // 정확히 7개만 선택
             .collect(Collectors.toList());
         
@@ -2943,25 +2938,25 @@ public class NumberGuessService {
     }
 
     /**
-     * 최신 500 draw로 패턴 검증 수행
+     * 최신 draw로 패턴 검증 수행
      * 학습된 가중치와 강화된 로직이 제대로 적용되는지 검증
      * 
      * @return 패턴 검증 통계
      */
     public PatternValidationStatistics validateWithLatest500Draws() {
-        log.info("=== 최신 500 Draw 검증 시작 (학습된 가중치 적용) ===");
+        log.info("=== 최신 {} Draw 검증 시작 (학습된 가중치 적용) ===", VALIDATION_DRAWS_COUNT);
         
         // 모든 회차를 Draw 번호 내림차순으로 정렬 (최신순)
         List<LotteryResult> allResults = lotteryResultRepository.findAllByOrderByDrawDesc();
         
-        if (allResults.size() < MIN_DRAWS_FOR_ANALYSIS + 500) {
+        if (allResults.size() < MIN_DRAWS_FOR_ANALYSIS + VALIDATION_DRAWS_COUNT) {
             log.warn("검증할 데이터가 부족합니다. (전체: {}, 최소 필요: {})", 
-                allResults.size(), MIN_DRAWS_FOR_ANALYSIS + 500);
+                allResults.size(), MIN_DRAWS_FOR_ANALYSIS + VALIDATION_DRAWS_COUNT);
             return null;
         }
         
-        // 최신 500 draw 선택 (최신순이므로 앞에서 500개)
-        List<LotteryResult> latest500 = allResults.subList(0, Math.min(500, allResults.size()));
+        // 최신 draw 선택 (최신순이므로 앞에서 VALIDATION_DRAWS_COUNT개)
+        List<LotteryResult> latest500 = allResults.subList(0, Math.min(VALIDATION_DRAWS_COUNT, allResults.size()));
         log.info("최신 {} Draw 선택", latest500.size());
         
         // 오름차순으로 변경 (오래된 것부터)
@@ -3077,7 +3072,7 @@ public class NumberGuessService {
             .count();
         double highMatchRate = (double) highMatchCount / validationResults.size() * 100;
         
-        log.info("=== 최신 500 Draw 검증 완료 ===");
+        log.info("=== 최신 {} Draw 검증 완료 ===", VALIDATION_DRAWS_COUNT);
         log.info("검증 회차: {}", validationResults.size());
         log.info("평균 정확도: {:.2f}%", avgAccuracy * 100);
         log.info("최대 맞춘개수: {}/7, 최소 맞춘개수: {}/7", maxMatch, minMatch);
@@ -3313,12 +3308,12 @@ public class NumberGuessService {
 
     /**
      * 반복 튜닝 검증 메서드
-     * 최신 1000 draw를 검증 대상으로 설정하고, 각 회차마다 9개 번호 중 최소 6개가 맞을 때까지 튜닝
+     * 최신 draw를 검증 대상으로 설정하고, 각 회차마다 9개 번호 중 최소 6개가 맞을 때까지 튜닝
      * 
      * @return 패턴 검증 통계
      */
     public PatternValidationStatistics validateWithIterativeTuning() {
-        log.info("=== 반복 튜닝 검증 시작 (최신 1000 Draw, 9개 번호 중 최소 {}개 맞춤 목표) ===", JINS_RIGHT_COUNT);
+        log.info("=== 반복 튜닝 검증 시작 (최신 {} Draw, 9개 번호 중 최소 {}개 맞춤 목표) ===", VALIDATION_DRAWS_COUNT, JINS_RIGHT_COUNT);
         
         // 모든 회차를 Draw 번호 내림차순으로 정렬 (최신순)
         List<LotteryResult> allResults = lotteryResultRepository.findAllByOrderByDrawDesc();
@@ -3332,8 +3327,8 @@ public class NumberGuessService {
         int latestDraw = allResults.get(0).getDraw();
         log.info("최신 회차: {}", latestDraw);
         
-        // 검증 대상: 최신 1000 draw (latestDraw - 1000 + 1부터 latestDraw까지)
-        int validationStartDraw = Math.max(1, latestDraw - 1000 + 1);
+        // 검증 대상: 최신 draw (latestDraw - VALIDATION_DRAWS_COUNT + 1부터 latestDraw까지)
+        int validationStartDraw = Math.max(1, latestDraw - VALIDATION_DRAWS_COUNT + 1);
         log.info("검증 시작 회차: {} (최신 {}회차부터 {}회차까지)", 
             validationStartDraw, validationStartDraw, latestDraw);
         
@@ -3610,23 +3605,22 @@ public class NumberGuessService {
             log.info(line);
         }
         
-        // 상위 9개 번호 강조 (100% 확률 제외)
-        log.info("\n[상위 9개 번호 (당첨번호 7개 + 보너스번호 2개 예상, 100% 확률 제외)]");
-        List<Map.Entry<Integer, Double>> top9Excluding100 = sorted.stream()
-            .filter(entry -> entry.getValue() < 0.9999) // 100% 미만인 번호만 선택
+        // 상위 9개 번호 강조
+        log.info("\n[상위 9개 번호 (당첨번호 7개 + 보너스번호 2개 예상)]");
+        List<Map.Entry<Integer, Double>> top9 = sorted.stream()
             .limit(9)
             .collect(Collectors.toList());
         
-        for (int i = 0; i < top9Excluding100.size(); i++) {
-            Map.Entry<Integer, Double> entry = top9Excluding100.get(i);
+        for (int i = 0; i < top9.size(); i++) {
+            Map.Entry<Integer, Double> entry = top9.get(i);
             int number = entry.getKey();
             double probability = entry.getValue();
             String probabilityStr = String.format("%.4f", probability * 100);
             log.info("  {}위: 번호 {} (확률: {}%)", i + 1, number, probabilityStr);
         }
         
-        if (top9Excluding100.size() < 9) {
-            log.warn("100% 확률을 제외한 상위 번호가 9개 미만입니다. (현재: {}개)", top9Excluding100.size());
+        if (top9.size() < 9) {
+            log.warn("상위 번호가 9개 미만입니다. (현재: {}개)", top9.size());
         }
         
         log.info("\n=== 모든 번호 확률 출력 완료 ===\n");
@@ -3655,11 +3649,10 @@ public class NumberGuessService {
         List<Integer> predictedMid7 = getMid7Numbers();
         List<Integer> predictedBottom7 = getBottom7NumbersWithPatternFiltering();
 
-        // 상위 9개 예측 (당첨번호 7개 + 보너스번호 2개, 100% 확률 제외)
+        // 상위 9개 예측 (당첨번호 7개 + 보너스번호 2개)
         List<NumberProbability> allProbabilities = calculateAllProbabilities();
         allProbabilities.sort((a, b) -> Double.compare(b.getProbability(), a.getProbability()));
         List<Integer> predictedTop9 = allProbabilities.stream()
-            .filter(np -> np.getProbability() < 0.9999) // 100% 미만인 번호만 선택
             .limit(9)
             .map(NumberProbability::getNumber)
             .collect(Collectors.toList());
