@@ -1,0 +1,29 @@
+---
+description: Always use Supabase MCP for database work in cool-runnings
+alwaysApply: true
+---
+
+# Supabase MCP (cool-runnings only)
+
+This project uses Supabase as the database. For any DB/schema/data/migration work, use the Supabase MCP server — do not use local MySQL, ad-hoc SQL clients, or assume another database.
+
+## Project
+
+- Supabase project name: `cool-running`
+- Project ref / id: `gdzaaspzwaaqtihvquel`
+- Primary table: `public.archive_entry`
+- MCP server: `user-supabase` (or `supabase`)
+
+## Required workflow
+
+1. Prefer Supabase MCP tools (`list_tables`, `execute_sql`, `apply_migration`, `get_logs`, `get_advisors`, etc.) before guessing schema or writing SQL blindly.
+2. For DDL / schema changes, use `apply_migration` (not raw ad-hoc DDL via other channels).
+3. For reads/writes/checks, use `execute_sql` against project `gdzaaspzwaaqtihvquel`.
+4. Before schema changes, call `list_tables` (verbose when needed).
+5. When debugging DB issues, start with `get_logs` / `get_advisors`.
+
+## Do not
+
+- Do not connect to or migrate toward local MySQL for this app's runtime data.
+- Do not invent connection strings or project refs; use the project above unless the user explicitly changes it.
+- Do not enable destructive production changes without confirming with the user.

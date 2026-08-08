@@ -33,7 +33,11 @@ build/
 .vscode/
 
 ### Cursor ###
-.cursor/
+.cursor/*
+!.cursor/rules/
+.cursor/rules/*
+!.cursor/rules/supabase-mcp.mdc
+!.cursor/mcp.json
 
 ### macOS ###
 .DS_Store
