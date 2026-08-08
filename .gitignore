@@ -43,3 +43,4 @@ build/
 target/*.war
 /docs/
 src/main/resources/application.properties
+DATABASE_ACCESS_ANALYSIS.md
