@@ -1,7 +1,9 @@
 package hyung.jin.seo.coolrunnings.controller;
 
+import hyung.jin.seo.coolrunnings.service.AdvancedPredictionService;
 import hyung.jin.seo.coolrunnings.service.MachineLearningService;
 import hyung.jin.seo.coolrunnings.service.StatisticalAnalysisService;
+import hyung.jin.seo.coolrunnings.service.ThoroughValidationService;
 import hyung.jin.seo.coolrunnings.service.ValidationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +18,7 @@ import java.util.Map;
 /**
  * 분석 레이어 컨트롤러
  * 1차 통계 분석, 2차 ML/딥러닝, 3차 검증 레이어의 API 엔드포인트 제공
+ * 4차 고급 예측 서비스 (Ensemble Learning, Cross-Validation 기반)
  */
 @Slf4j
 @RestController
@@ -26,6 +29,8 @@ public class AnalysisController {
     private final StatisticalAnalysisService statisticalAnalysisService;
     private final MachineLearningService machineLearningService;
     private final ValidationService validationService;
+    private final AdvancedPredictionService advancedPredictionService;
+    private final ThoroughValidationService thoroughValidationService;
 
     /**
      * 1차 통계 분석 수행
@@ -200,6 +205,237 @@ public class AnalysisController {
             response.put("success", false);
             response.put("message", "분석 파이프라인 실패: " + e.getMessage());
             response.put("partialResults", pipelineResults);
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * 4차 고급 예측 수행 (Ensemble Learning + Cross-Validation)
+     * 
+     * @return 고급 예측 결과
+     */
+    @GetMapping("/advanced-prediction")
+    public ResponseEntity<Map<String, Object>> performAdvancedPrediction() {
+        
+        log.info("4차 고급 예측 요청");
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            AdvancedPredictionService.PredictionResult predictionResult = 
+                advancedPredictionService.predict();
+            
+            if (predictionResult == null) {
+                response.put("success", false);
+                response.put("message", "예측을 위한 데이터가 부족합니다.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            
+            response.put("success", true);
+            response.put("message", "고급 예측 완료");
+            response.put("data", predictionResult);
+            response.put("predictedNumbers", predictionResult.getPredictedNumbers());
+            response.put("confidence", predictionResult.getPredictionConfidence());
+            response.put("algorithmInfo", predictionResult.getAlgorithmInfo());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("고급 예측 실패: {}", e.getMessage(), e);
+            
+            response.put("success", false);
+            response.put("message", "고급 예측 실패: " + e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * Cross-Validation을 통한 최적 가중치 학습
+     * 
+     * @param dataSize 검증에 사용할 데이터 크기 (선택사항, 기본값: 1000)
+     * @return Cross-Validation 결과
+     */
+    @PostMapping("/train-weights")
+    public ResponseEntity<Map<String, Object>> trainOptimalWeights(
+            @RequestParam(required = false, defaultValue = "1000") Integer dataSize) {
+        
+        log.info("최적 가중치 학습 요청 (데이터 크기: {})", dataSize);
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            AdvancedPredictionService.CrossValidationResult cvResult = 
+                advancedPredictionService.performCrossValidation(dataSize);
+            
+            if (cvResult == null) {
+                response.put("success", false);
+                response.put("message", "Cross-Validation을 위한 데이터가 부족합니다.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            
+            response.put("success", true);
+            response.put("message", "가중치 학습 완료");
+            response.put("data", cvResult);
+            response.put("bestWeights", cvResult.getBestWeights());
+            response.put("averageAccuracy", cvResult.getAverageAccuracy());
+            response.put("averageMatchCount", cvResult.getAverageMatchCount());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("가중치 학습 실패: {}", e.getMessage(), e);
+            
+            response.put("success", false);
+            response.put("message", "가중치 학습 실패: " + e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * 가중치 학습 및 캐싱
+     * 
+     * @param dataSize 학습에 사용할 데이터 크기 (선택사항, 기본값: 1000)
+     * @return 학습된 가중치
+     */
+    @PostMapping("/train-and-cache")
+    public ResponseEntity<Map<String, Object>> trainAndCacheWeights(
+            @RequestParam(required = false, defaultValue = "1000") Integer dataSize) {
+        
+        log.info("가중치 학습 및 캐싱 요청 (데이터 크기: {})", dataSize);
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            AdvancedPredictionService.OptimizedWeights weights = 
+                advancedPredictionService.trainAndCacheWeights(dataSize);
+            
+            if (weights == null) {
+                response.put("success", false);
+                response.put("message", "가중치 학습 실패");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            
+            response.put("success", true);
+            response.put("message", "가중치 학습 및 캐싱 완료");
+            response.put("data", weights);
+            response.put("cvAccuracy", weights.getCvAccuracy());
+            response.put("cvAverageMatchCount", weights.getCvAverageMatchCount());
+            response.put("trainingDate", weights.getTrainingDate());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("가중치 학습 및 캐싱 실패: {}", e.getMessage(), e);
+            
+            response.put("success", false);
+            response.put("message", "가중치 학습 및 캐싱 실패: " + e.getMessage());
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
+    /**
+     * 철저한 검증 수행 (최근 N주)
+     * 데이터 누수 방지 및 다중 검증 전략 사용
+     * 
+     * @param weeks 검증할 주 수 (선택사항, 기본값: 3)
+     * @return 철저한 검증 결과
+     */
+    @GetMapping("/thorough-validation")
+    public ResponseEntity<Map<String, Object>> performThoroughValidation(
+            @RequestParam(required = false, defaultValue = "3") Integer weeks) {
+        
+        log.info("철저한 검증 요청 (주 수: {})", weeks);
+        
+        Map<String, Object> response = new HashMap<>();
+        
+        try {
+            List<ThoroughValidationService.ThoroughValidationResult> validationResults = 
+                thoroughValidationService.validateRecentWeeks(weeks);
+            
+            if (validationResults.isEmpty()) {
+                response.put("success", false);
+                response.put("message", "검증을 위한 데이터가 부족합니다.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+            
+            // 통계 계산
+            Map<String, Object> statistics = new HashMap<>();
+            int totalValidations = validationResults.size();
+            double avgWinningAccuracy = validationResults.stream()
+                .mapToDouble(ThoroughValidationService.ThoroughValidationResult::getWinningAccuracy)
+                .average().orElse(0.0);
+            double avgBonusAccuracy = validationResults.stream()
+                .mapToDouble(ThoroughValidationService.ThoroughValidationResult::getBonusAccuracy)
+                .average().orElse(0.0);
+            double avgTotalAccuracy = validationResults.stream()
+                .mapToDouble(ThoroughValidationService.ThoroughValidationResult::getTotalAccuracy)
+                .average().orElse(0.0);
+            double avgWinningMatchCount = validationResults.stream()
+                .mapToInt(ThoroughValidationService.ThoroughValidationResult::getWinningMatchCount)
+                .average().orElse(0.0);
+            double avgBonusMatchCount = validationResults.stream()
+                .mapToInt(ThoroughValidationService.ThoroughValidationResult::getBonusMatchCount)
+                .average().orElse(0.0);
+            double avgTotalMatchCount = validationResults.stream()
+                .mapToInt(ThoroughValidationService.ThoroughValidationResult::getTotalMatchCount)
+                .average().orElse(0.0);
+            
+            statistics.put("totalValidations", totalValidations);
+            statistics.put("averageWinningAccuracy", avgWinningAccuracy);
+            statistics.put("averageBonusAccuracy", avgBonusAccuracy);
+            statistics.put("averageTotalAccuracy", avgTotalAccuracy);
+            statistics.put("averageWinningMatchCount", avgWinningMatchCount);
+            statistics.put("averageBonusMatchCount", avgBonusMatchCount);
+            statistics.put("averageTotalMatchCount", avgTotalMatchCount);
+            
+            // 최고 성능
+            int maxWinningMatch = validationResults.stream()
+                .mapToInt(ThoroughValidationService.ThoroughValidationResult::getWinningMatchCount)
+                .max().orElse(0);
+            int maxBonusMatch = validationResults.stream()
+                .mapToInt(ThoroughValidationService.ThoroughValidationResult::getBonusMatchCount)
+                .max().orElse(0);
+            int maxTotalMatch = validationResults.stream()
+                .mapToInt(ThoroughValidationService.ThoroughValidationResult::getTotalMatchCount)
+                .max().orElse(0);
+            
+            statistics.put("maxWinningMatchCount", maxWinningMatch);
+            statistics.put("maxBonusMatchCount", maxBonusMatch);
+            statistics.put("maxTotalMatchCount", maxTotalMatch);
+            
+            response.put("success", true);
+            response.put("message", "철저한 검증 완료");
+            response.put("weeks", weeks);
+            response.put("statistics", statistics);
+            response.put("detailedResults", validationResults);
+            
+            // 요약 생성
+            StringBuilder summary = new StringBuilder();
+            summary.append("=== 철저한 검증 결과 (최근 ").append(weeks).append("주) ===\n");
+            summary.append("총 검증 횟수: ").append(totalValidations).append("\n");
+            summary.append("평균 당첨번호 정확도: ").append(String.format("%.2f%%", avgWinningAccuracy * 100)).append("\n");
+            summary.append("평균 보너스번호 정확도: ").append(String.format("%.2f%%", avgBonusAccuracy * 100)).append("\n");
+            summary.append("평균 전체 정확도: ").append(String.format("%.2f%%", avgTotalAccuracy * 100)).append("\n");
+            summary.append("평균 당첨번호 맞춘 개수: ").append(String.format("%.2f개", avgWinningMatchCount)).append("\n");
+            summary.append("평균 보너스번호 맞춘 개수: ").append(String.format("%.2f개", avgBonusMatchCount)).append("\n");
+            summary.append("평균 전체 맞춘 개수: ").append(String.format("%.2f개", avgTotalMatchCount)).append("\n");
+            summary.append("최대 당첨번호 맞춘 개수: ").append(maxWinningMatch).append("개\n");
+            summary.append("최대 보너스번호 맞춘 개수: ").append(maxBonusMatch).append("개\n");
+            summary.append("최대 전체 맞춘 개수: ").append(maxTotalMatch).append("개\n");
+            
+            response.put("summary", summary.toString());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            log.error("철저한 검증 실패: {}", e.getMessage(), e);
+            
+            response.put("success", false);
+            response.put("message", "철저한 검증 실패: " + e.getMessage());
             
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }

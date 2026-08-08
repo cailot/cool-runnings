@@ -26,6 +26,7 @@ import java.util.Optional;
 public class LotteryCrawlerService {
 
     private final LotteryResultRepository lotteryResultRepository;
+    private final NumberGuessService numberGuessService;
 
     @Value("${lottery.crawler.url}")
     private String crawlUrl;
@@ -90,6 +91,13 @@ public class LotteryCrawlerService {
             }
 
             log.info("크롤링 완료: {}개 새 회차 저장", savedCount);
+            
+            // 데이터가 저장되었으면 캐시 무효화
+            if (savedCount > 0) {
+                numberGuessService.invalidateDataCache();
+                log.info("데이터 캐시 무효화 완료 (새 회차 {}개 저장됨)", savedCount);
+            }
+            
             return savedCount;
 
         } catch (Exception e) {

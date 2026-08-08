@@ -1,31 +1,28 @@
 package hyung.jin.seo.coolrunnings.service;
 
-import com.sendgrid.Method;
-import com.sendgrid.Request;
-import com.sendgrid.SendGrid;
-import com.sendgrid.helpers.mail.Mail;
-import com.sendgrid.helpers.mail.objects.Content;
-import com.sendgrid.helpers.mail.objects.Email;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 이메일 전송 서비스 (SendGrid 사용)
+ * 이메일 전송 서비스 (Gmail SMTP 사용)
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailService {
 
-    @Value("${email.api.key}")
-    private String sendGridApiKey;
+    private final JavaMailSender mailSender;
 
-    @Value("${email.sender.address}")
+    @Value("${spring.mail.username}")
     private String senderAddress;
 
     @Value("${email.send.to}")
@@ -37,17 +34,19 @@ public class EmailService {
      * @param top7Numbers 상위 7개 번호와 확률
      * @param bottom7Numbers 하위 7개 번호와 확률
      * @param mid7Numbers 중간 7개 번호와 확률
+     * @param elapsedTime 총 소요 시간 (밀리초)
      */
     public void sendNumberPredictionResults(
             List<NumberGuessService.NumberProbability> top7Numbers,
             List<NumberGuessService.NumberProbability> bottom7Numbers,
-            List<NumberGuessService.NumberProbability> mid7Numbers) {
+            List<NumberGuessService.NumberProbability> mid7Numbers,
+            long elapsedTime) {
         
         try {
             String subject = "JAC Automator Test Bot...";
-            String htmlContent = buildEmailContent(top7Numbers, bottom7Numbers, mid7Numbers);
+            String htmlContent = buildEmailContent(top7Numbers, bottom7Numbers, mid7Numbers, elapsedTime);
             
-            // sendEmail(subject, htmlContent);
+            sendEmail(subject, htmlContent);
             log.info("번호 예측 결과 이메일 전송 완료: {}", recipientAddress);
             
         } catch (Exception e) {
@@ -61,7 +60,22 @@ public class EmailService {
     private String buildEmailContent(
             List<NumberGuessService.NumberProbability> top7Numbers,
             List<NumberGuessService.NumberProbability> bottom7Numbers,
-            List<NumberGuessService.NumberProbability> mid7Numbers) {
+            List<NumberGuessService.NumberProbability> mid7Numbers,
+            long elapsedTime) {
+        
+        // 시간, 분, 초로 변환
+        long hours = elapsedTime / (1000 * 60 * 60);
+        long minutes = (elapsedTime % (1000 * 60 * 60)) / (1000 * 60);
+        long seconds = (elapsedTime % (1000 * 60)) / 1000;
+        
+        String timeStr;
+        if (hours > 0) {
+            timeStr = String.format("%d시간 %d분 %d초", hours, minutes, seconds);
+        } else if (minutes > 0) {
+            timeStr = String.format("%d분 %d초", minutes, seconds);
+        } else {
+            timeStr = String.format("%d초", seconds);
+        }
         
         StringBuilder html = new StringBuilder();
         html.append("<!DOCTYPE html>");
@@ -77,7 +91,8 @@ public class EmailService {
         html.append("tr:nth-child(even) { background-color: #f2f2f2; }");
         html.append(".top-section { background-color: #e8f5e9; padding: 15px; border-radius: 5px; margin-bottom: 20px; }");
         html.append(".mid-section { background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px; }");
-        html.append(".bottom-section { background-color: #fff3e0; padding: 15px; border-radius: 5px; }");
+        html.append(".bottom-section { background-color: #fff3e0; padding: 15px; border-radius: 5px; margin-bottom: 20px; }");
+        html.append(".time-section { background-color: #f3e5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }");
         html.append(".probability { font-weight: bold; color: #2e7d32; }");
         html.append(".mid-probability { font-weight: bold; color: #1976d2; }");
         html.append(".low-probability { font-weight: bold; color: #d32f2f; }");
@@ -86,6 +101,12 @@ public class EmailService {
         html.append("<body>");
         html.append("<h1>Let's roll the dice for.......Set for Life</h1>");
         html.append("<p>다음 회차에 나올 가능성이 높은/낮은 번호를 분석한 결과입니다.</p>");
+        
+        // 소요 시간
+        html.append("<div class='time-section'>");
+        html.append("<h2>⏱️ 총 소요 시간</h2>");
+        html.append("<p style='font-size: 18px; font-weight: bold;'>").append(timeStr).append("</p>");
+        html.append("</div>");
         
         // 상위 7개 번호
         html.append("<div class='top-section'>");
@@ -147,33 +168,28 @@ public class EmailService {
     }
 
     /**
-     * SendGrid를 사용하여 이메일 전송
+     * Gmail SMTP를 사용하여 이메일 전송
      */
     private void sendEmail(String subject, String htmlContent) throws Exception {
-        Email from = new Email(senderAddress);
-        Email to = new Email(recipientAddress);
-        Content content = new Content("text/html", htmlContent);
-        Mail mail = new Mail(from, subject, to, content);
-
-        SendGrid sg = new SendGrid(sendGridApiKey);
-        Request request = new Request();
+        if (senderAddress == null || recipientAddress == null || subject == null || htmlContent == null) {
+            throw new IllegalArgumentException("이메일 전송에 필요한 정보가 누락되었습니다.");
+        }
         
         try {
-            request.setMethod(Method.POST);
-            request.setEndpoint("mail/send");
-            request.setBody(mail.build());
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
-            com.sendgrid.Response response = sg.api(request);
+            helper.setFrom(senderAddress);
+            helper.setTo(recipientAddress);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true); // true = HTML 형식
             
-            if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
-                log.info("이메일 전송 성공: Status Code {}", response.getStatusCode());
-            } else {
-                log.warn("이메일 전송 응답: Status Code {}, Body {}", 
-                    response.getStatusCode(), response.getBody());
-            }
-        } catch (Exception e) {
-            log.error("SendGrid API 호출 실패: {}", e.getMessage(), e);
-            throw e;
+            mailSender.send(message);
+            log.info("이메일 전송 성공: {} -> {}", senderAddress, recipientAddress);
+            
+        } catch (MessagingException e) {
+            log.error("Gmail SMTP 이메일 전송 실패: {}", e.getMessage(), e);
+            throw new Exception("이메일 전송 실패: " + e.getMessage(), e);
         }
     }
 
@@ -223,15 +239,14 @@ public class EmailService {
         long hours = elapsedTime / (1000 * 60 * 60);
         long minutes = (elapsedTime % (1000 * 60 * 60)) / (1000 * 60);
         long seconds = (elapsedTime % (1000 * 60)) / 1000;
-        long milliseconds = elapsedTime % 1000;
         
         String timeStr;
         if (hours > 0) {
-            timeStr = String.format("%d시간 %d분 %d초 (%d밀리초)", hours, minutes, seconds, milliseconds);
+            timeStr = String.format("%d시간 %d분 %d초", hours, minutes, seconds);
         } else if (minutes > 0) {
-            timeStr = String.format("%d분 %d초 (%d밀리초)", minutes, seconds, milliseconds);
+            timeStr = String.format("%d분 %d초", minutes, seconds);
         } else {
-            timeStr = String.format("%d초 (%d밀리초)", seconds, milliseconds);
+            timeStr = String.format("%d초", seconds);
         }
         
         StringBuilder html = new StringBuilder();

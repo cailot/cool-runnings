@@ -366,7 +366,7 @@ public class ValidationService {
         }
         
         // 검증할 데이터 (최신 validationCount개)
-        List<LotteryResult> validationData = allResults.subList(0, validationCount);
+        List<LotteryResult> validationData = new ArrayList<>(allResults.subList(0, validationCount));
         
         // 역순으로 정렬 (오래된 것부터)
         Collections.reverse(validationData);
@@ -524,13 +524,13 @@ public class ValidationService {
         comprehensiveResult.setSummary(summary.toString());
         
         log.info("검증 완료");
-        log.info("평균 정확도: {:.2f}%, 평균 맞춘 개수: {:.2f}개", 
-            statistics.getAverageAccuracy() * 100, statistics.getAverageMatchCount());
-        log.info("전략 비교 - 상위{}개: {:.2f}%, 랜덤: {:.2f}%, 빈도: {:.2f}%", 
+        log.info("평균 정확도: {}%, 평균 맞춘 개수: {}개", 
+            String.format("%.2f", statistics.getAverageAccuracy() * 100), String.format("%.2f", statistics.getAverageMatchCount()));
+        log.info("전략 비교 - 상위{}개: {}%, 랜덤: {}%, 빈도: {}%", 
             strategyComparison.getTopK(),
-            strategyComparison.getTopKStrategyHitRate() * 100,
-            strategyComparison.getRandomStrategyHitRate() * 100,
-            strategyComparison.getFrequencyStrategyHitRate() * 100);
+            String.format("%.2f", strategyComparison.getTopKStrategyHitRate() * 100),
+            String.format("%.2f", strategyComparison.getRandomStrategyHitRate() * 100),
+            String.format("%.2f", strategyComparison.getFrequencyStrategyHitRate() * 100));
         
         return comprehensiveResult;
     }
@@ -775,7 +775,7 @@ public class ValidationService {
         }
         
         // 백테스트 데이터 (최신 period개)
-        List<LotteryResult> backtestData = allResults.subList(0, period);
+        List<LotteryResult> backtestData = new ArrayList<>(allResults.subList(0, period));
         
         // 역순으로 정렬 (오래된 것부터)
         Collections.reverse(backtestData);

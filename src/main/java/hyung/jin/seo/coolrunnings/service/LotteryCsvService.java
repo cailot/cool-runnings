@@ -26,6 +26,7 @@ import java.util.Optional;
 public class LotteryCsvService {
 
     private final LotteryResultRepository lotteryResultRepository;
+    private final NumberGuessService numberGuessService;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
@@ -101,6 +102,12 @@ public class LotteryCsvService {
             
             log.info("CSV 임포트 완료: 총 {}개 저장, {}개 건너뜀, {}개 오류", 
                     savedCount, skippedCount, errorCount);
+            
+            // 데이터가 저장되었으면 캐시 무효화
+            if (savedCount > 0) {
+                numberGuessService.invalidateDataCache();
+                log.info("데이터 캐시 무효화 완료 (새 레코드 {}개 저장됨)", savedCount);
+            }
             
         } catch (Exception e) {
             log.error("CSV 파일 읽기 실패: {}", e.getMessage(), e);

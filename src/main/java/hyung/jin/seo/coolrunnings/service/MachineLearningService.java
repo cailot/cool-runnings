@@ -128,7 +128,8 @@ public class MachineLearningService {
             return new ArrayList<>();
         }
         
-        List<LotteryResult> analysisData = allResults.subList(0, Math.min(windowSize, allResults.size()));
+        List<LotteryResult> analysisData = new ArrayList<>(
+            allResults.subList(0, Math.min(windowSize, allResults.size())));
         // 역순으로 정렬 (오래된 것부터)
         Collections.reverse(analysisData);
         
@@ -346,7 +347,8 @@ public class MachineLearningService {
         }
         
         // 백테스트 데이터 (최근 backtestPeriod개)
-        List<LotteryResult> backtestData = allResults.subList(0, Math.min(backtestPeriod, allResults.size()));
+        List<LotteryResult> backtestData = new ArrayList<>(
+            allResults.subList(0, Math.min(backtestPeriod, allResults.size())));
         Collections.reverse(backtestData);
         
         int correctPredictions = 0;
@@ -357,8 +359,9 @@ public class MachineLearningService {
             LotteryResult currentResult = backtestData.get(i);
             List<LotteryResult> historicalData = backtestData.subList(0, i);
             
-            // 예측 수행
-            List<NumberRecommendationScore> scores = calculateRecommendationScores(Math.min(100, historicalData.size()));
+            // 예측 수행: 백테스트 대상 회차 이전 데이터만 사용
+            List<NumberRecommendationScore> scores =
+                calculateRecommendationScoresFromData(historicalData, Math.min(100, historicalData.size()));
             List<Integer> predictedTop9 = scores.stream()
                 .limit(9)
                 .map(NumberRecommendationScore::getNumber)
@@ -379,6 +382,57 @@ public class MachineLearningService {
         }
         
         return totalPredictions > 0 ? (double) correctPredictions / totalPredictions : 0.0;
+    }
+
+    /**
+     * 전달받은 과거 데이터만 사용해 추천 점수를 계산한다.
+     * 백테스트에서 repository 전체 데이터를 다시 읽으면 미래 회차가 섞일 수 있다.
+     */
+    private List<NumberRecommendationScore> calculateRecommendationScoresFromData(
+            List<LotteryResult> historicalData,
+            int windowSize) {
+
+        if (historicalData.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        List<LotteryResult> sortedData = new ArrayList<>(historicalData);
+        sortedData.sort((a, b) -> Integer.compare(b.getDraw(), a.getDraw()));
+
+        int recentWindow = Math.min(Math.max(1, windowSize), sortedData.size());
+        List<LotteryResult> recentData = sortedData.subList(0, recentWindow);
+
+        List<NumberRecommendationScore> scores = new ArrayList<>();
+        for (int num = 1; num <= MAX_NUMBER; num++) {
+            final int number = num;
+
+            long recentAppearances = recentData.stream()
+                .filter(r -> containsNumber(r, number))
+                .count();
+            long totalAppearances = sortedData.stream()
+                .filter(r -> containsNumber(r, number))
+                .count();
+
+            double recentFrequency = (double) recentAppearances / recentWindow;
+            double overallFrequency = (double) totalAppearances / sortedData.size();
+            double baseline = 9.0 / MAX_NUMBER;
+
+            NumberRecommendationScore score = new NumberRecommendationScore();
+            score.setNumber(number);
+            score.setFactorScores(new HashMap<>());
+            score.getFactorScores().put("recent_frequency", recentFrequency);
+            score.getFactorScores().put("overall_frequency", overallFrequency);
+            score.getFactorScores().put("baseline", baseline);
+
+            double recommendationScore = 0.55 * recentFrequency + 0.35 * overallFrequency + 0.10 * baseline;
+            score.setRecommendationScore(Math.max(0.0, Math.min(1.0, recommendationScore)));
+            score.setConfidence(Math.max(0.0, Math.min(1.0, 1.0 - Math.abs(recentFrequency - overallFrequency))));
+            score.setWarning("백테스트용 과거 데이터 기반 점수입니다.");
+            scores.add(score);
+        }
+
+        scores.sort((a, b) -> Double.compare(b.getRecommendationScore(), a.getRecommendationScore()));
+        return scores;
     }
     
     /**
@@ -486,8 +540,8 @@ public class MachineLearningService {
         
         result.setOverallWarning(overallWarning.toString());
         
-        log.info("ML 모델 예측 완료 (신뢰도: {:.2f}%, 백테스트 승률: {:.2f}%)", 
-            avgConfidence * 100, backtestWinRate * 100);
+        log.info("ML 모델 예측 완료 (신뢰도: {}%, 백테스트 승률: {}%)", 
+            String.format("%.2f", avgConfidence * 100), String.format("%.2f", backtestWinRate * 100));
         
         return result;
     }

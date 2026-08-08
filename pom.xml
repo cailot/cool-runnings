@@ -64,10 +64,10 @@
 			<artifactId>springdoc-openapi-ui</artifactId>
 			<version>1.2.32</version>
 		</dependency>
-		<!-- Mysql -->
+		<!-- PostgreSQL (Supabase) -->
 		<dependency>
-			<groupId>mysql</groupId>
-			<artifactId>mysql-connector-java</artifactId>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<!-- JPA -->
@@ -131,10 +131,10 @@
 			<version>2.8.4</version>
 		</dependency>
 		<!-- Mail -->
-		<!-- <dependency>
+		<dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency> -->
+        </dependency>
 
 		 <!-- https://mvnrepository.com/artifact/com.sendgrid/sendgrid-java -->
         <dependency>
@@ -143,12 +143,21 @@
             <version>4.10.3</version>
         </dependency>
 
-        <!-- Pdf -->
-		 <dependency>
+        <!-- Pdf: itext7-core는 POM만 배포됨 → kernel+io+layout 조합으로 대체 -->
+        <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>itext7-core</artifactId>
-            <version>7.0.4</version>
-            <type>pom</type>
+            <artifactId>kernel</artifactId>
+            <version>7.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>io</artifactId>
+            <version>7.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>layout</artifactId>
+            <version>7.2.5</version>
         </dependency>
 
 		<!-- JFreeChart for chart generation -->
