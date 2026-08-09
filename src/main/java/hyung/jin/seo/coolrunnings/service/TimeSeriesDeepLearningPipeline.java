@@ -4,7 +4,6 @@ import hyung.jin.seo.coolrunnings.model.LotteryResult;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,7 +18,6 @@ import java.util.stream.Collectors;
  * - 앙상블 예측
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class TimeSeriesDeepLearningPipeline {
 

@@ -4,7 +4,6 @@ import hyung.jin.seo.coolrunnings.model.LotteryResult;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -17,7 +16,6 @@ import java.util.stream.Collectors;
  * 실제 데이터에서의 높은 정확도는 과적합일 가능성이 높음
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class OverfittingValidationService {
 

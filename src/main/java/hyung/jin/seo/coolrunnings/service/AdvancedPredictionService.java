@@ -4,8 +4,6 @@ import hyung.jin.seo.coolrunnings.model.LotteryResult;
 import hyung.jin.seo.coolrunnings.repository.LotteryResultRepository;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -24,20 +22,21 @@ import java.util.stream.Collectors;
  * 5. 동적 가중치 조정 (성능 기반)
  */
 @Slf4j
-@Service
 public class AdvancedPredictionService {
 
     private final LotteryResultRepository lotteryResultRepository;
     private final MachineLearningService machineLearningService;
-    private final NumberGuessService numberGuessService;
-    
-    // 순환 참조 방지를 위해 @Lazy를 생성자 파라미터에 적용
+    private NumberGuessService numberGuessService;
+
     public AdvancedPredictionService(
             LotteryResultRepository lotteryResultRepository,
-            MachineLearningService machineLearningService,
-            @Lazy NumberGuessService numberGuessService) {
+            MachineLearningService machineLearningService) {
         this.lotteryResultRepository = lotteryResultRepository;
         this.machineLearningService = machineLearningService;
+    }
+
+    /** Breaks NumberGuessService ↔ AdvancedPredictionService cycle. */
+    public void setNumberGuessService(NumberGuessService numberGuessService) {
         this.numberGuessService = numberGuessService;
     }
     // statisticalAnalysisService는 향후 확장을 위해 주석 처리 (현재는 직접 계산)

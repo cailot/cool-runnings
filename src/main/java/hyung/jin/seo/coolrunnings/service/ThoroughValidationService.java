@@ -5,7 +5,6 @@ import hyung.jin.seo.coolrunnings.repository.LotteryResultRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -16,7 +15,6 @@ import java.util.stream.Collectors;
  * 데이터 누수 방지 및 다중 검증 전략을 사용하여 정확한 매칭 검증
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class ThoroughValidationService {
 

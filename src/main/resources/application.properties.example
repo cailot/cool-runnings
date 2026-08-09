@@ -1,0 +1,24 @@
+#################################################################
+#           Database Configuration (Supabase PostgreSQL)
+##################################################################
+spring.datasource.url=jdbc:postgresql://db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require&TimeZone=Australia/Sydney
+spring.datasource.username=postgres
+spring.datasource.password=YOUR_DB_PASSWORD
+spring.datasource.driver-class-name=org.postgresql.Driver
+
+#################################################################
+#           Email Configuration (Gmail SMTP)
+##################################################################
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=YOUR_GMAIL@gmail.com
+spring.mail.password=YOUR_GMAIL_APP_PASSWORD
+email.send.to=YOUR_RECIPIENT@gmail.com
+
+#################################################################
+#           Lottery Crawler Configuration
+##################################################################
+lottery.crawler.url=https://en.lottolyzer.com/history/australia/set-for-life
+lottery.crawler.enabled=true
+
+app.version=0.0.3

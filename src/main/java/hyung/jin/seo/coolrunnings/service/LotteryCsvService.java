@@ -4,11 +4,9 @@ import hyung.jin.seo.coolrunnings.model.LotteryResult;
 import hyung.jin.seo.coolrunnings.repository.LotteryResultRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
@@ -21,7 +19,6 @@ import java.util.Optional;
  * CSV 파일에서 복권 결과를 읽어서 데이터베이스에 저장하는 서비스
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class LotteryCsvService {
 
@@ -36,7 +33,6 @@ public class LotteryCsvService {
      * @param csvFilePath CSV 파일 경로 (classpath 기준)
      * @return 저장된 레코드 수
      */
-    @Transactional
     public int importFromCsv(String csvFilePath) {
         if (csvFilePath == null || csvFilePath.trim().isEmpty()) {
             throw new IllegalArgumentException("CSV 파일 경로가 비어있습니다.");
@@ -49,10 +45,17 @@ public class LotteryCsvService {
         int errorCount = 0;
         
         try {
-            ClassPathResource resource = new ClassPathResource(csvFilePath.trim());
-            
+            String path = csvFilePath.trim();
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            InputStream inputStream = LotteryCsvService.class.getClassLoader().getResourceAsStream(path);
+            if (inputStream == null) {
+                throw new IllegalArgumentException("Classpath resource not found: " + csvFilePath);
+            }
+
             try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8))) {
+                    new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
                 
                 // 헤더 라인 건너뛰기
                 String headerLine = reader.readLine();

@@ -5,7 +5,6 @@ import hyung.jin.seo.coolrunnings.repository.LotteryResultRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.util.*;
 
@@ -15,7 +14,6 @@ import java.util.*;
  * "설명 가능한" 지표를 제공하는 서비스
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class StatisticalAnalysisService {
 

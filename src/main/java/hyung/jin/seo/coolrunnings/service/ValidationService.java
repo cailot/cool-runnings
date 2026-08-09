@@ -6,7 +6,6 @@ import hyung.jin.seo.coolrunnings.repository.LotteryResultRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,7 +15,6 @@ import java.util.stream.Collectors;
  * 최신 1500회차 데이터로 검증 및 조절 기능 제공
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class ValidationService {
 

@@ -5,7 +5,6 @@ import hyung.jin.seo.coolrunnings.repository.LotteryResultRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
  * 주의: 복권은 본질적으로 랜덤성이 높으므로, 모델의 예측력에 한계가 있음을 명확히 인지해야 함
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class MachineLearningService {
 

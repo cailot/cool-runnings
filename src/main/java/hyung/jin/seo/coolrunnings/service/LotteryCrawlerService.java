@@ -2,15 +2,11 @@ package hyung.jin.seo.coolrunnings.service;
 
 import hyung.jin.seo.coolrunnings.model.LotteryResult;
 import hyung.jin.seo.coolrunnings.repository.LotteryResultRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -21,24 +17,28 @@ import java.util.Optional;
  * Set for Life 복권 결과를 웹사이트에서 크롤링하는 서비스
  */
 @Slf4j
-@Service
-@RequiredArgsConstructor
 public class LotteryCrawlerService {
 
     private final LotteryResultRepository lotteryResultRepository;
     private final NumberGuessService numberGuessService;
-
-    @Value("${lottery.crawler.url}")
-    private String crawlUrl;
+    private final String crawlUrl;
 
     private static final int CONNECTION_TIMEOUT = 10000; // 10초
+
+    public LotteryCrawlerService(
+            LotteryResultRepository lotteryResultRepository,
+            NumberGuessService numberGuessService,
+            String crawlUrl) {
+        this.lotteryResultRepository = lotteryResultRepository;
+        this.numberGuessService = numberGuessService;
+        this.crawlUrl = crawlUrl;
+    }
 
     /**
      * 최신 회차 정보를 확인하고 업데이트가 필요하면 크롤링하여 저장
      * 
      * @return 새로 저장된 레코드 수
      */
-    @Transactional
     public int checkAndUpdateLatestDraws() {
         log.info("최신 회차 확인 및 업데이트 시작");
 

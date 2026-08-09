@@ -4,7 +4,6 @@ import hyung.jin.seo.coolrunnings.model.LotteryResult;
 import hyung.jin.seo.coolrunnings.repository.LotteryResultRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -15,7 +14,6 @@ import java.util.stream.Collectors;
  * 과거 데이터를 분석하여 다음 회차 번호 출현 확률을 계산
  */
 @Slf4j
-@Service
 @RequiredArgsConstructor
 public class NumberGuessService {
 
