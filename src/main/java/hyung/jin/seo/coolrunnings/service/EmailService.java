@@ -53,7 +53,7 @@ public class EmailService {
             List<NumberGuessService.NumberProbability> mid7Numbers,
             long elapsedTime) {
 
-        String subject = "JAC Automator Test Bot...";
+        String subject = "Today is Lucky day !";
         String htmlContent = buildEmailContent(top7Numbers, bottom7Numbers, mid7Numbers, elapsedTime);
         try {
             sendEmail(subject, htmlContent);
