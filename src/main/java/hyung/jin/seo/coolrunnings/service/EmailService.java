@@ -53,13 +53,14 @@ public class EmailService {
             List<NumberGuessService.NumberProbability> mid7Numbers,
             long elapsedTime) {
 
+        String subject = "JAC Automator Test Bot...";
+        String htmlContent = buildEmailContent(top7Numbers, bottom7Numbers, mid7Numbers, elapsedTime);
         try {
-            String subject = "JAC Automator Test Bot...";
-            String htmlContent = buildEmailContent(top7Numbers, bottom7Numbers, mid7Numbers, elapsedTime);
             sendEmail(subject, htmlContent);
             log.info("번호 예측 결과 이메일 전송 완료: {}", recipientAddress);
         } catch (Exception e) {
-            log.error("번호 예측 결과 이메일 전송 실패: {}", e.getMessage(), e);
+            throw new IllegalStateException(
+                    "번호 예측 결과 이메일 전송 실패 (" + recipientAddress + "): " + e.getMessage(), e);
         }
     }
 
@@ -165,14 +166,16 @@ public class EmailService {
             long elapsedTime,
             int runsCount) {
 
+        String subject = "JAC Automator Bot....";
+        String htmlContent = buildMultipleRunsEmailContent(
+                top7Numbers, midRange7Numbers, top7Frequencies, midRange7Frequencies, elapsedTime, runsCount);
         try {
-            String subject = "JAC Automator Bot....";
-            String htmlContent = buildMultipleRunsEmailContent(
-                    top7Numbers, midRange7Numbers, top7Frequencies, midRange7Frequencies, elapsedTime, runsCount);
             sendEmail(subject, htmlContent);
             log.info("{}회 반복 예측 결과 이메일 전송 완료: {}", runsCount, recipientAddress);
         } catch (Exception e) {
-            log.error("{}회 반복 예측 결과 이메일 전송 실패: {}", runsCount, e.getMessage(), e);
+            throw new IllegalStateException(
+                    runsCount + "회 반복 예측 결과 이메일 전송 실패 (" + recipientAddress + "): " + e.getMessage(),
+                    e);
         }
     }
 

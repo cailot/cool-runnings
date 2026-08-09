@@ -21,70 +21,71 @@ public class DailyPipeline {
         if (!crawlerEnabled) {
             log.info("크롤링이 비활성화되어 있습니다. (lottery.crawler.enabled=false)");
         } else if (lotteryCrawlerService == null) {
-            log.warn("크롤링이 활성화되어 있지만 LotteryCrawlerService를 사용할 수 없습니다.");
+            throw new IllegalStateException("크롤링이 활성화되어 있지만 LotteryCrawlerService를 사용할 수 없습니다.");
         } else {
             log.info("자동 크롤링 실행");
             try {
                 int savedCount = lotteryCrawlerService.checkAndUpdateLatestDraws();
                 log.info("자동 크롤링 완료: {}개 새 회차 저장", savedCount);
             } catch (Exception e) {
-                log.error("자동 크롤링 실패: {}", e.getMessage(), e);
+                throw new IllegalStateException("자동 크롤링 실패: " + e.getMessage(), e);
             }
         }
 
         log.info("번호 예측 분석 시작");
         long predictionStartTime = System.currentTimeMillis();
         long totalProcessStartTime = predictionStartTime;
+
+        long cachePreloadStartTime = System.currentTimeMillis();
+        log.info("딥러닝 예측 캐시 사전 생성 중...");
         try {
-            long cachePreloadStartTime = System.currentTimeMillis();
-            log.info("딥러닝 예측 캐시 사전 생성 중...");
-            try {
-                numberGuessService.preloadDeepLearningCache();
-                log.info("딥러닝 예측 캐시 사전 생성 완료 (소요 시간: {})",
-                        formatElapsedTime(System.currentTimeMillis() - cachePreloadStartTime));
-            } catch (Exception e) {
-                log.warn("딥러닝 예측 캐시 사전 생성 실패 (자동으로 생성됩니다): {}", e.getMessage());
-            }
-
-            List<NumberGuessService.NumberProbability> top7 =
-                    numberGuessService.getTop7NumbersWithPatternFilteringAndProbability();
-            List<NumberGuessService.NumberProbability> bottom7 =
-                    numberGuessService.getBottom7NumbersWithPatternFilteringAndProbability();
-            List<NumberGuessService.NumberProbability> mid7 =
-                    numberGuessService.getMid7NumbersWithProbability();
-
-            log.info("번호 예측 분석 완료 (소요 시간: {})",
-                    formatElapsedTime(System.currentTimeMillis() - predictionStartTime));
-
-            try {
-                numberGuessService.printAllNumberProbabilities();
-            } catch (Exception e) {
-                log.error("번호 확률 출력 실패: {}", e.getMessage(), e);
-            }
-
-            try {
-                numberGuessService.getMidNumbersInRange();
-            } catch (Exception e) {
-                log.error("39%~42% 확률 범위 번호 출력 실패: {}", e.getMessage(), e);
-            }
-
-            try {
-                log.info("반복 예측 시작 전 경과 시간: {}",
-                        formatElapsedTime(System.currentTimeMillis() - totalProcessStartTime));
-                numberGuessService.predictWithMultipleRuns();
-            } catch (Exception e) {
-                log.error("1500회 반복 예측 분석 실패: {}", e.getMessage(), e);
-            }
-
-            try {
-                long totalElapsedTime = System.currentTimeMillis() - predictionStartTime;
-                emailService.sendNumberPredictionResults(top7, bottom7, mid7, totalElapsedTime);
-                log.info("번호 예측 결과 이메일 전송 완료");
-            } catch (Exception e) {
-                log.error("이메일 전송 실패: {}", e.getMessage(), e);
-            }
+            numberGuessService.preloadDeepLearningCache();
+            log.info("딥러닝 예측 캐시 사전 생성 완료 (소요 시간: {})",
+                    formatElapsedTime(System.currentTimeMillis() - cachePreloadStartTime));
         } catch (Exception e) {
-            log.error("번호 예측 분석 실패: {}", e.getMessage(), e);
+            log.warn("딥러닝 예측 캐시 사전 생성 실패 (자동으로 생성됩니다): {}", e.getMessage());
+        }
+
+        List<NumberGuessService.NumberProbability> top7;
+        List<NumberGuessService.NumberProbability> bottom7;
+        List<NumberGuessService.NumberProbability> mid7;
+        try {
+            top7 = numberGuessService.getTop7NumbersWithPatternFilteringAndProbability();
+            bottom7 = numberGuessService.getBottom7NumbersWithPatternFilteringAndProbability();
+            mid7 = numberGuessService.getMid7NumbersWithProbability();
+        } catch (Exception e) {
+            throw new IllegalStateException("번호 예측 분석 실패: " + e.getMessage(), e);
+        }
+
+        log.info("번호 예측 분석 완료 (소요 시간: {})",
+                formatElapsedTime(System.currentTimeMillis() - predictionStartTime));
+
+        try {
+            numberGuessService.printAllNumberProbabilities();
+        } catch (Exception e) {
+            log.warn("번호 확률 출력 실패: {}", e.getMessage());
+        }
+
+        try {
+            numberGuessService.getMidNumbersInRange();
+        } catch (Exception e) {
+            log.warn("39%~42% 확률 범위 번호 출력 실패: {}", e.getMessage());
+        }
+
+        try {
+            log.info("반복 예측 시작 전 경과 시간: {}",
+                    formatElapsedTime(System.currentTimeMillis() - totalProcessStartTime));
+            numberGuessService.predictWithMultipleRuns();
+        } catch (Exception e) {
+            throw new IllegalStateException("1500회 반복 예측 분석 실패: " + e.getMessage(), e);
+        }
+
+        try {
+            long totalElapsedTime = System.currentTimeMillis() - predictionStartTime;
+            emailService.sendNumberPredictionResults(top7, bottom7, mid7, totalElapsedTime);
+            log.info("번호 예측 결과 이메일 전송 완료");
+        } catch (Exception e) {
+            throw new IllegalStateException("이메일 전송 실패: " + e.getMessage(), e);
         }
 
         log.info("모든 작업이 완료되었습니다. 애플리케이션을 종료합니다.");

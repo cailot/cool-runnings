@@ -1,8 +1,15 @@
 #################################################################
 #           Database Configuration (Supabase PostgreSQL)
 ##################################################################
-spring.datasource.url=jdbc:postgresql://db.YOUR_PROJECT_REF.supabase.co:5432/postgres?sslmode=require&TimeZone=Australia/Sydney
-spring.datasource.username=postgres
+# Prefer the Session pooler (IPv4). Direct db.<ref>.supabase.co is IPv6-only
+# and fails on GitHub Actions with: Network is unreachable.
+#
+# Dashboard → Connect → Session pooler:
+#   host: aws-0-<region>.pooler.supabase.com
+#   port: 5432
+#   user: postgres.<project-ref>
+spring.datasource.url=jdbc:postgresql://aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres?sslmode=require&TimeZone=Australia/Sydney
+spring.datasource.username=postgres.YOUR_PROJECT_REF
 spring.datasource.password=YOUR_DB_PASSWORD
 spring.datasource.driver-class-name=org.postgresql.Driver
 
