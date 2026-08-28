@@ -35,8 +35,9 @@ build/
 ### Cursor ###
 .cursor/*
 !.cursor/rules/
-.cursor/rules/*
-!.cursor/rules/supabase-mcp.mdc
+!.cursor/rules/**
+!.cursor/skills/
+!.cursor/skills/**
 !.cursor/mcp.json
 
 ### macOS ###

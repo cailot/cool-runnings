@@ -67,8 +67,8 @@ java -jar target/cool-runnings.jar
 ## 파이프라인
 
 1. Lottolyzer 크롤링 → Supabase 저장
-2. 딥러닝/앙상블 기반 번호 예측 (1500회 반복 포함)
-3. Gmail SMTP로 결과 전송
+2. 참고용 단일 패스 예측 + **1500회 반복 합의**로 최종 번호 확정
+3. Gmail SMTP로 **합의 결과** 전송 (단일 패스 top7이 아님)
 4. 프로세스 종료
 
 ## 프로젝트 구조
@@ -84,3 +84,11 @@ src/main/java/hyung/jin/seo/coolrunnings/
 .github/workflows/daily-lottery-report.yml
 run.sh
 ```
+
+## Agent harness
+
+Cursor/에이전트 컨텍스트는 아래를 기준으로 합니다.
+
+- [`AGENTS.md`](AGENTS.md) — 프로젝트 개요·하드 룰
+- [`.cursor/rules/`](.cursor/rules/) — 아키텍처, 프로덕션 안전, GitHub Actions, Supabase MCP
+- [`.cursor/skills/`](.cursor/skills/) — 반복 작업 스킬 (예: 이메일 문구 변경)

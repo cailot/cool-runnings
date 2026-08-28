@@ -46,15 +46,17 @@ public class DailyPipeline {
             log.warn("딥러닝 예측 캐시 사전 생성 실패 (자동으로 생성됩니다): {}", e.getMessage());
         }
 
-        List<NumberGuessService.NumberProbability> top7;
-        List<NumberGuessService.NumberProbability> bottom7;
-        List<NumberGuessService.NumberProbability> mid7;
+        // 단일 패스 결과는 참고용 로그. 이메일은 아래 합의(multiple-runs) 결과를 사용한다.
         try {
-            top7 = numberGuessService.getTop7NumbersWithPatternFilteringAndProbability();
-            bottom7 = numberGuessService.getBottom7NumbersWithPatternFilteringAndProbability();
-            mid7 = numberGuessService.getMid7NumbersWithProbability();
+            List<NumberGuessService.NumberProbability> top7 =
+                    numberGuessService.getTop7NumbersWithPatternFilteringAndProbability();
+            List<NumberGuessService.NumberProbability> bottom7 =
+                    numberGuessService.getBottom7NumbersWithPatternFilteringAndProbability();
+            List<NumberGuessService.NumberProbability> mid7 =
+                    numberGuessService.getMid7NumbersWithProbability();
+            log.info("단일 패스 참고용 top7={}, mid7={}, bottom7={}", top7, mid7, bottom7);
         } catch (Exception e) {
-            throw new IllegalStateException("번호 예측 분석 실패: " + e.getMessage(), e);
+            log.warn("단일 패스 참고 예측 실패 (합의 예측은 계속 진행): {}", e.getMessage());
         }
 
         log.info("번호 예측 분석 완료 (소요 시간: {})",
@@ -72,18 +74,25 @@ public class DailyPipeline {
             log.warn("39%~42% 확률 범위 번호 출력 실패: {}", e.getMessage());
         }
 
+        NumberGuessService.MultipleRunsPredictionResult consensus;
         try {
             log.info("반복 예측 시작 전 경과 시간: {}",
                     formatElapsedTime(System.currentTimeMillis() - totalProcessStartTime));
-            numberGuessService.predictWithMultipleRuns();
+            consensus = numberGuessService.predictWithMultipleRuns();
         } catch (Exception e) {
             throw new IllegalStateException("1500회 반복 예측 분석 실패: " + e.getMessage(), e);
         }
 
         try {
-            long totalElapsedTime = System.currentTimeMillis() - predictionStartTime;
-            emailService.sendNumberPredictionResults(top7, bottom7, mid7, totalElapsedTime);
-            log.info("번호 예측 결과 이메일 전송 완료");
+            // 최종 메일 번호 = 1500회 합의 결과 (단일 패스 top7이 아님)
+            emailService.sendMultipleRunsPredictionResults(
+                    consensus.getTop7(),
+                    consensus.getMidRange7(),
+                    consensus.getTop7Frequencies(),
+                    consensus.getMidRange7Frequencies(),
+                    consensus.getElapsedTimeMillis(),
+                    consensus.getRunsCount());
+            log.info("{}회 합의 예측 결과 이메일 전송 완료", consensus.getRunsCount());
         } catch (Exception e) {
             throw new IllegalStateException("이메일 전송 실패: " + e.getMessage(), e);
         }

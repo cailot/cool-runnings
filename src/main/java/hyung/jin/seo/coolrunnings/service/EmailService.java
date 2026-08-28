@@ -166,7 +166,7 @@ public class EmailService {
             long elapsedTime,
             int runsCount) {
 
-        String subject = "JAC Automator Bot....";
+        String subject = "Today is Lucky day !";
         String htmlContent = buildMultipleRunsEmailContent(
                 top7Numbers, midRange7Numbers, top7Frequencies, midRange7Frequencies, elapsedTime, runsCount);
         try {
@@ -207,10 +207,11 @@ public class EmailService {
         html.append("th { background-color: #3498db; color: white; padding: 12px; text-align: left; }");
         html.append("td { padding: 10px; border-bottom: 1px solid #ddd; }");
         html.append("</style></head><body>");
-        html.append("<h1>").append(runsCount).append("회 반복 예측 분석 결과</h1>");
+        html.append("<h1>Today is Lucky day !</h1>");
+        html.append("<p>").append(runsCount).append("회 반복 합의 예측 결과입니다. (등장횟수 = 합의 투표)</p>");
         html.append("<p>총 소요 시간: <strong>").append(timeStr).append("</strong></p>");
 
-        html.append("<h2>최종 상위 7개 번호</h2><table><tr><th>순위</th><th>번호</th><th>등장횟수</th><th>확률(%)</th></tr>");
+        html.append("<h2>최종 상위 7개 번호 (합의)</h2><table><tr><th>순위</th><th>번호</th><th>등장횟수</th><th>확률(%)</th></tr>");
         for (int i = 0; i < top7Numbers.size(); i++) {
             NumberGuessService.NumberProbability np = top7Numbers.get(i);
             html.append("<tr><td>").append(i + 1).append("</td><td>").append(np.getNumber())

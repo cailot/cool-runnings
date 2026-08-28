@@ -2317,10 +2317,63 @@ public class NumberGuessService {
     }
 
     /**
+     * 반복 예측(합의) 결과. 이메일/파이프라인에서 최종 번호로 사용한다.
+     */
+    public static class MultipleRunsPredictionResult {
+        private final List<NumberProbability> top7;
+        private final List<NumberProbability> midRange7;
+        private final Map<Integer, Integer> top7Frequencies;
+        private final Map<Integer, Integer> midRange7Frequencies;
+        private final long elapsedTimeMillis;
+        private final int runsCount;
+
+        public MultipleRunsPredictionResult(
+                List<NumberProbability> top7,
+                List<NumberProbability> midRange7,
+                Map<Integer, Integer> top7Frequencies,
+                Map<Integer, Integer> midRange7Frequencies,
+                long elapsedTimeMillis,
+                int runsCount) {
+            this.top7 = List.copyOf(top7);
+            this.midRange7 = List.copyOf(midRange7);
+            this.top7Frequencies = Map.copyOf(top7Frequencies);
+            this.midRange7Frequencies = Map.copyOf(midRange7Frequencies);
+            this.elapsedTimeMillis = elapsedTimeMillis;
+            this.runsCount = runsCount;
+        }
+
+        public List<NumberProbability> getTop7() {
+            return top7;
+        }
+
+        public List<NumberProbability> getMidRange7() {
+            return midRange7;
+        }
+
+        public Map<Integer, Integer> getTop7Frequencies() {
+            return top7Frequencies;
+        }
+
+        public Map<Integer, Integer> getMidRange7Frequencies() {
+            return midRange7Frequencies;
+        }
+
+        public long getElapsedTimeMillis() {
+            return elapsedTimeMillis;
+        }
+
+        public int getRunsCount() {
+            return runsCount;
+        }
+    }
+
+    /**
      * 예측 로직을 여러 번 실행하여 일관성 있는 결과 추출
      * 등장횟수가 많은 번호들로 최종 상위 7개와 39%~42% 범위 번호 7개씩 생성
+     *
+     * @return 합의 기반 최종 번호 (이메일에 사용)
      */
-    public void predictWithMultipleRuns() {
+    public MultipleRunsPredictionResult predictWithMultipleRuns() {
         long startTime = System.currentTimeMillis();
         log.info("\n=== {}회 반복 예측 분석 시작 ===", MULTIPLE_RUNS_COUNT);
         
@@ -2576,6 +2629,14 @@ public class NumberGuessService {
             log.info("⏱️  총 소요 시간: {}", timeStr);
         }
         log.info("");
+
+        return new MultipleRunsPredictionResult(
+                finalTop9WithProb,
+                finalMidRangeWithProb,
+                new HashMap<>(top9Frequency),
+                new HashMap<>(midRangeFrequency),
+                elapsedTime,
+                MULTIPLE_RUNS_COUNT);
     }
     
     /**

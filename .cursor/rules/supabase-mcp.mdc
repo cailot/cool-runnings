@@ -1,29 +1,29 @@
 ---
-description: Always use Supabase MCP for database work in cool-runnings
+description: cool-runnings DB 작업은 항상 Supabase MCP 사용
 alwaysApply: true
 ---
 
-# Supabase MCP (cool-runnings only)
+# Supabase MCP (cool-runnings 전용)
 
-This project uses Supabase as the database. For any DB/schema/data/migration work, use the Supabase MCP server — do not use local MySQL, ad-hoc SQL clients, or assume another database.
+이 프로젝트의 DB는 Supabase다. 스키마/데이터/마이그레이션 작업은 Supabase MCP 서버를 쓰고, 로컬 MySQL·임의 SQL 클라이언트·다른 DB를 가정하지 말 것.
 
-## Project
+## 프로젝트
 
-- Supabase project name: `cool-running`
-- Project ref / id: `gdzaaspzwaaqtihvquel`
-- Primary table: `public.archive_entry`
-- MCP server: `user-supabase` (or `supabase`)
+- Supabase 프로젝트명: `cool-running`
+- 프로젝트 ref / id: `gdzaaspzwaaqtihvquel`
+- 주요 테이블: `public.archive_entry`
+- MCP 서버: `user-supabase` (또는 `supabase`)
 
-## Required workflow
+## 필수 워크플로
 
-1. Prefer Supabase MCP tools (`list_tables`, `execute_sql`, `apply_migration`, `get_logs`, `get_advisors`, etc.) before guessing schema or writing SQL blindly.
-2. For DDL / schema changes, use `apply_migration` (not raw ad-hoc DDL via other channels).
-3. For reads/writes/checks, use `execute_sql` against project `gdzaaspzwaaqtihvquel`.
-4. Before schema changes, call `list_tables` (verbose when needed).
-5. When debugging DB issues, start with `get_logs` / `get_advisors`.
+1. 스키마를 추측하거나 SQL을 무작정 쓰기 전에 Supabase MCP 도구(`list_tables`, `execute_sql`, `apply_migration`, `get_logs`, `get_advisors` 등)를 우선 사용.
+2. DDL / 스키마 변경은 `apply_migration` 사용 (다른 경로의 임의 DDL 금지).
+3. 읽기/쓰기/확인은 프로젝트 `gdzaaspzwaaqtihvquel`에 대해 `execute_sql` 사용.
+4. 스키마 변경 전에 `list_tables` 호출 (필요 시 verbose).
+5. DB 이슈 디버깅은 `get_logs` / `get_advisors`부터 시작.
 
-## Do not
+## 하지 말 것
 
-- Do not connect to or migrate toward local MySQL for this app's runtime data.
-- Do not invent connection strings or project refs; use the project above unless the user explicitly changes it.
-- Do not enable destructive production changes without confirming with the user.
+- 이 앱 런타임 데이터를 로컬 MySQL로 연결하거나 마이그레이션하지 말 것.
+- 연결 문자열·프로젝트 ref를 임의로 만들지 말 것. 사용자가 바꾸기 전까지 위 프로젝트를 사용.
+- 파괴적인 프로덕션 변경은 사용자 확인 없이 진행하지 말 것.

@@ -1,0 +1,12 @@
+---
+description: cool-runnings standalone Java 17 아키텍처 (Spring Boot 아님)
+alwaysApply: true
+---
+
+# 아키텍처 (cool-runnings)
+
+- 런타임: **Java 17 + Maven**, standalone 1회 실행 앱 — **Spring Boot 아님**.
+- 진입점: `CoolRunningsApplication` → `DailyPipeline` (크롤링 → 예측 → 이메일 → 종료).
+- 패키지 구성: `config` / `model` / `repository` / `service` (+ `dto`).
+- `DailyPipeline`이 오케스트레이션을 담당. 크롤러·예측·이메일은 별도 서비스로 유지.
+- 치명적 실패(크롤링 / 예측 / 이메일)는 throw해서 GitHub Actions에서 non-zero로 끝나게 할 것.

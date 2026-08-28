@@ -1,0 +1,13 @@
+---
+description: GitHub Actions 일일 배치 — pooler JDBC, Secrets, fail-fast
+globs: .github/workflows/**,README.md
+alwaysApply: false
+---
+
+# GitHub Actions (daily lottery report)
+
+- 워크플로: `.github/workflows/daily-lottery-report.yml`
+- Supabase **Session pooler** JDBC(IPv4)를 사용. 직접 `db.<ref>.supabase.co`는 IPv6-only라 Actions에서 `Network is unreachable`로 실패함.
+- 사용자명 형식: `postgres.<project-ref>` (`postgres` 단독 사용 금지).
+- 필수 Secrets: `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`, `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`, `EMAIL_SEND_TO`.
+- 크롤링 / 예측 / 이메일 실패는 잡을 실패(non-zero exit)로 처리할 것. 예외를 삼켜 초록 CI로 만들지 말 것.
