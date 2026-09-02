@@ -55,11 +55,11 @@ java -jar target/cool-runnings.jar
 > **중요:** GitHub Actions는 IPv4만 지원합니다. `db.<ref>.supabase.co:5432` 직접 연결은 IPv6-only라
 > `Network is unreachable`로 바로 실패합니다. Dashboard → **Connect → Session pooler** 값을 쓰세요.
 >
-> 이 프로젝트(`cool-running`, `ap-southeast-2`) 예시:
+> 이 프로젝트(`cyibnehpcqqgtmbknkdq`, `ap-southeast-2`) 예시:
 >
 > ```text
 > SPRING_DATASOURCE_URL=jdbc:postgresql://aws-0-ap-southeast-2.pooler.supabase.com:5432/postgres?sslmode=require&TimeZone=Australia/Sydney
-> SPRING_DATASOURCE_USERNAME=postgres.gdzaaspzwaaqtihvquel
+> SPRING_DATASOURCE_USERNAME=postgres.cyibnehpcqqgtmbknkdq
 > ```
 >
 > 예측/이메일 실패 시 워크플로는 이제 **실패(exit non-zero)** 로 표시됩니다.

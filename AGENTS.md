@@ -11,7 +11,7 @@
 
 ## 데이터
 
-- Supabase Postgres 프로젝트 `cool-running` (`gdzaaspzwaaqtihvquel`)
+- Supabase Postgres 프로젝트 ref: `cyibnehpcqqgtmbknkdq` (esim-mcp와 동일 조직)
 - 주요 테이블: `public.archive_entry` (JDBC)
 - DB/스키마/데이터 작업: Supabase MCP 사용 — `.cursor/rules/supabase-mcp.mdc` 참고
 
