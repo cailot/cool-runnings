@@ -18,6 +18,8 @@ public class DailyPipeline {
     private final boolean crawlerEnabled;
 
     public void runOnce() {
+        long pipelineStartTime = System.currentTimeMillis();
+
         if (!crawlerEnabled) {
             log.info("크롤링이 비활성화되어 있습니다. (lottery.crawler.enabled=false)");
         } else if (lotteryCrawlerService == null) {
@@ -84,13 +86,17 @@ public class DailyPipeline {
         }
 
         try {
-            // 최종 메일 번호 = 1500회 합의 결과 (단일 패스 top7이 아님)
+            // 메일 소요 시간 = 전체 파이프라인 (크롤링·예측·합의). 합의 루프만의 시간이 아님.
+            long pipelineElapsedTime = System.currentTimeMillis() - pipelineStartTime;
+            log.info("전체 파이프라인 소요 시간: {} (합의 루프: {})",
+                    formatElapsedTime(pipelineElapsedTime),
+                    formatElapsedTime(consensus.getElapsedTimeMillis()));
             emailService.sendMultipleRunsPredictionResults(
                     consensus.getTop7(),
                     consensus.getMidRange7(),
                     consensus.getTop7Frequencies(),
                     consensus.getMidRange7Frequencies(),
-                    consensus.getElapsedTimeMillis(),
+                    pipelineElapsedTime,
                     consensus.getRunsCount());
             log.info("{}회 합의 예측 결과 이메일 전송 완료", consensus.getRunsCount());
         } catch (Exception e) {

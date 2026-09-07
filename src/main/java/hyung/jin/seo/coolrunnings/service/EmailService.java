@@ -209,7 +209,7 @@ public class EmailService {
         html.append("</style></head><body>");
         html.append("<h1>Today is Lucky day !</h1>");
         html.append("<p>").append(runsCount).append("회 반복 합의 예측 결과입니다. (등장횟수 = 합의 투표)</p>");
-        html.append("<p>총 소요 시간: <strong>").append(timeStr).append("</strong></p>");
+        html.append("<p>총 소요 시간 (크롤링·예측·합의): <strong>").append(timeStr).append("</strong></p>");
 
         html.append("<h2>최종 상위 7개 번호 (합의)</h2><table><tr><th>순위</th><th>번호</th><th>등장횟수</th><th>확률(%)</th></tr>");
         for (int i = 0; i < top7Numbers.size(); i++) {
